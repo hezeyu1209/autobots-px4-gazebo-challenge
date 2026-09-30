@@ -18,11 +18,11 @@
     </spherical_coordinates>
     <scene>
       <grid>false</grid>
-      <ambient>0.55 0.55 0.55 1</ambient>
-      <background>0.32 0.42 0.52 1</background>
+      <ambient>0.72 0.72 0.72 1</ambient>
+      <background>0.12 0.14 0.18 1</background>
       <shadows>true</shadows>
     </scene>
-    <!-- Explicit world plugins disable Gazebo's implicit defaults. PX4 needs all four sensor systems. -->
+    <!-- Explicit plugins are needed for PX4 sensors in this custom world. -->
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
@@ -33,54 +33,89 @@
     <plugin filename="gz-sim-air-pressure-system" name="gz::sim::systems::AirPressure"/>
     <plugin filename="gz-sim-magnetometer-system" name="gz::sim::systems::Magnetometer"/>
     <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
-    <light name="sun" type="directional">
-      <pose>0 0 30 0.35 -0.65 0</pose>
-      <cast_shadows>true</cast_shadows>
-      <intensity>1.2</intensity>
-      <direction>-0.35 0.15 -1</direction>
+
+    <light name="lamp_A" type="point">
+      <pose>0 0 3.8 0 0 0</pose>
+      <diffuse>1 0.95 0.85 1</diffuse>
+      <attenuation><range>14</range><constant>0.5</constant><linear>0.04</linear><quadratic>0.01</quadratic></attenuation>
     </light>
-    <!-- Gazebo Fuel assets are downloaded once and then cached. -->
-    <include><uri>https://fuel.ignitionrobotics.org/1.0/hexarotor/models/grasspatch</uri><name>grass_center</name><pose>0 0 0 0 0 0</pose></include>
-    <include><uri>https://fuel.ignitionrobotics.org/1.0/hexarotor/models/grasspatch</uri><name>grass_north</name><pose>0 15 0 0 0 0.15</pose></include>
-    <include><uri>https://fuel.ignitionrobotics.org/1.0/hexarotor/models/grasspatch</uri><name>grass_south</name><pose>0 -15 0 0 0 -0.1</pose></include>
-    <include><uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Oak Tree</uri><name>oak_east</name><pose>8 6 0 0 0 0.3</pose></include>
-    <include><uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Pine Tree</uri><name>pine_east</name><pose>8 -6 0 0 0 0</pose></include>
-    <include><uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Oak Tree</uri><name>oak_west</name><pose>-8 7 0 0 0 -0.2</pose></include>
-    <include><uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Pine Tree</uri><name>pine_west</name><pose>-8 -7 0 0 0 0.2</pose></include>
-    <model name="ground">
+    <light name="lamp_B" type="point">
+      <pose>7 0 3.8 0 0 0</pose>
+      <diffuse>0.85 0.92 1 1</diffuse>
+      <attenuation><range>14</range><constant>0.5</constant><linear>0.04</linear><quadratic>0.01</quadratic></attenuation>
+    </light>
+
+    <!-- Closed room: x=-2.25..9.25, y=-4.2..4.2, ceiling underside z=4.2. -->
+    <model name="room_shell">
       <static>true</static>
-      <link name="link">
-        <collision name="collision"><geometry><plane><normal>0 0 1</normal><size>60 60</size></plane></geometry></collision>
-        <visual name="visual"><geometry><plane><normal>0 0 1</normal><size>60 60</size></plane></geometry><material><ambient>0.12 0.18 0.12 1</ambient><diffuse>0.18 0.28 0.16 1</diffuse></material></visual>
+      <link name="structure">
+        <collision name="floor_collision"><pose>3.5 0 -0.08 0 0 0</pose><geometry><box><size>11.5 8.4 0.16</size></box></geometry></collision>
+        <visual name="floor"><pose>3.5 0 -0.08 0 0 0</pose><geometry><box><size>11.5 8.4 0.16</size></box></geometry><material><diffuse>0.32 0.37 0.43 1</diffuse></material></visual>
+        <collision name="west_collision"><pose>-2.25 0 2.1 0 0 0</pose><geometry><box><size>0.18 8.4 4.2</size></box></geometry></collision>
+        <visual name="west"><pose>-2.25 0 2.1 0 0 0</pose><geometry><box><size>0.18 8.4 4.2</size></box></geometry><material><diffuse>0.76 0.79 0.81 1</diffuse></material></visual>
+        <collision name="east_collision"><pose>9.25 0 2.1 0 0 0</pose><geometry><box><size>0.18 8.4 4.2</size></box></geometry></collision>
+        <visual name="east"><pose>9.25 0 2.1 0 0 0</pose><geometry><box><size>0.18 8.4 4.2</size></box></geometry><material><diffuse>0.76 0.79 0.81 1</diffuse></material></visual>
+        <collision name="north_collision"><pose>3.5 4.2 2.1 0 0 0</pose><geometry><box><size>11.5 0.18 4.2</size></box></geometry></collision>
+        <visual name="north"><pose>3.5 4.2 2.1 0 0 0</pose><geometry><box><size>11.5 0.18 4.2</size></box></geometry><material><diffuse>0.76 0.79 0.81 1</diffuse></material></visual>
+        <collision name="south_collision"><pose>3.5 -4.2 2.1 0 0 0</pose><geometry><box><size>11.5 0.18 4.2</size></box></geometry></collision>
+        <visual name="south"><pose>3.5 -4.2 2.1 0 0 0</pose><geometry><box><size>11.5 0.18 4.2</size></box></geometry><material><diffuse>0.76 0.79 0.81 1</diffuse></material></visual>
+        <collision name="ceiling_collision"><pose>3.5 0 4.28 0 0 0</pose><geometry><box><size>11.5 8.4 0.16</size></box></geometry></collision>
+        <!-- The ceiling still collides with the drone. Its visual is omitted so
+             the overhead camera can show the entire closed flight volume. -->
       </link>
     </model>
-    <model name="landing_pad">
-      <static>true</static><pose>0 0 0.03 0 0 0</pose>
-      <link name="link">
-        <visual name="pad"><geometry><cylinder><radius>2.2</radius><length>0.06</length></cylinder></geometry><material><ambient>0.08 0.10 0.12 1</ambient><diffuse>0.12 0.15 0.18 1</diffuse></material></visual>
-        <visual name="ring"><pose>0 0 0.04 0 0 0</pose><geometry><cylinder><radius>1.8</radius><length>0.02</length></cylinder></geometry><material><ambient>0.9 0.65 0.05 1</ambient><diffuse>1 0.75 0.05 1</diffuse></material></visual>
+
+    <!-- Straight A->B is physically blocked. Open passages remain near y=+/-2.8. -->
+    <model name="center_partition">
+      <static>true</static>
+      <link name="wall">
+        <collision name="solid_collision"><pose>3.5 0 2.1 0 0 0</pose><geometry><box><size>0.28 3.6 4.2</size></box></geometry></collision>
+        <visual name="solid"><pose>3.5 0 2.1 0 0 0</pose><geometry><box><size>0.28 3.6 4.2</size></box></geometry><material><diffuse>0.62 0.55 0.46 1</diffuse></material></visual>
+        <visual name="south_edge"><pose>3.5 -1.81 2.1 0 0 0</pose><geometry><box><size>0.31 0.035 4.2</size></box></geometry><material><diffuse>1 0.58 0.1 1</diffuse></material></visual>
+        <visual name="north_edge"><pose>3.5 1.81 2.1 0 0 0</pose><geometry><box><size>0.31 0.035 4.2</size></box></geometry><material><diffuse>1 0.58 0.1 1</diffuse></material></visual>
       </link>
     </model>
-    <model name="destination_B">
-      <static>true</static><pose>7 0 0.02 0 0 0</pose>
-      <link name="link">
-        <visual name="marker"><geometry><cylinder><radius>1.2</radius><length>0.04</length></cylinder></geometry><material><ambient>0.02 0.25 0.75 1</ambient><diffuse>0.04 0.42 0.95 1</diffuse></material></visual>
+
+    <!-- Table tops at z=0.77 m; ring markings are visual, tops are collidable. -->
+    <model name="table_A">
+      <static>true</static>
+      <link name="table">
+        <collision name="top_collision"><pose>0 0 0.72 0 0 0</pose><geometry><box><size>1.8 1.5 0.1</size></box></geometry></collision>
+        <visual name="top"><pose>0 0 0.72 0 0 0</pose><geometry><box><size>1.8 1.5 0.1</size></box></geometry><material><diffuse>0.46 0.31 0.19 1</diffuse></material></visual>
+        <collision name="pedestal_collision"><pose>0 0 0.335 0 0 0</pose><geometry><box><size>0.18 0.18 0.67</size></box></geometry></collision>
+        <visual name="pedestal"><pose>0 0 0.335 0 0 0</pose><geometry><box><size>0.18 0.18 0.67</size></box></geometry><material><diffuse>0.16 0.19 0.22 1</diffuse></material></visual>
+        <visual name="foot"><pose>0 0 0.045 0 0 0</pose><geometry><box><size>1.25 1 0.09</size></box></geometry><material><diffuse>0.16 0.19 0.22 1</diffuse></material></visual>
+        <visual name="ring"><pose>0 0 0.774 0 0 0</pose><geometry><cylinder><radius>0.64</radius><length>0.008</length></cylinder></geometry><material><diffuse>1 0.74 0.06 1</diffuse></material></visual>
+        <visual name="center"><pose>0 0 0.782 0 0 0</pose><geometry><cylinder><radius>0.48</radius><length>0.008</length></cylinder></geometry><material><diffuse>0.14 0.16 0.18 1</diffuse></material></visual>
       </link>
     </model>
+    <model name="table_B">
+      <static>true</static><pose>7 0 0 0 0 0</pose>
+      <link name="table">
+        <collision name="top_collision"><pose>0 0 0.72 0 0 0</pose><geometry><box><size>1.8 1.5 0.1</size></box></geometry></collision>
+        <visual name="top"><pose>0 0 0.72 0 0 0</pose><geometry><box><size>1.8 1.5 0.1</size></box></geometry><material><diffuse>0.46 0.31 0.19 1</diffuse></material></visual>
+        <collision name="pedestal_collision"><pose>0 0 0.335 0 0 0</pose><geometry><box><size>0.18 0.18 0.67</size></box></geometry></collision>
+        <visual name="pedestal"><pose>0 0 0.335 0 0 0</pose><geometry><box><size>0.18 0.18 0.67</size></box></geometry><material><diffuse>0.16 0.19 0.22 1</diffuse></material></visual>
+        <visual name="foot"><pose>0 0 0.045 0 0 0</pose><geometry><box><size>1.25 1 0.09</size></box></geometry><material><diffuse>0.16 0.19 0.22 1</diffuse></material></visual>
+        <visual name="ring"><pose>0 0 0.774 0 0 0</pose><geometry><cylinder><radius>0.64</radius><length>0.008</length></cylinder></geometry><material><diffuse>0.07 0.43 1 1</diffuse></material></visual>
+        <visual name="center"><pose>0 0 0.782 0 0 0</pose><geometry><cylinder><radius>0.48</radius><length>0.008</length></cylinder></geometry><material><diffuse>0.14 0.16 0.18 1</diffuse></material></visual>
+      </link>
+    </model>
+
     <model name="overview_camera">
-      <static>true</static><pose>4 -9 6 0 0.40 1.57</pose>
+      <static>true</static><pose>3.5 0 8.5 0 1.5708 1.5708</pose>
       <link name="camera_link">
         <sensor name="overview" type="camera">
-          <camera><horizontal_fov>1.30</horizontal_fov><image><width>1280</width><height>720</height></image><clip><near>0.1</near><far>100</far></clip></camera>
+          <camera><horizontal_fov>2.2</horizontal_fov><image><width>1280</width><height>720</height></image><clip><near>0.1</near><far>30</far></clip></camera>
           <always_on>1</always_on><update_rate>30</update_rate>
         </sensor>
       </link>
     </model>
     <model name="pad_camera">
-      <static>true</static><pose>0 -6 4.5 0 0.48 1.57</pose>
+      <static>true</static><pose>-0.5 -2.8 2.5 0 0.45 1.45</pose>
       <link name="camera_link">
         <sensor name="pad" type="camera">
-          <camera><horizontal_fov>1.1</horizontal_fov><image><width>1280</width><height>720</height></image><clip><near>0.1</near><far>100</far></clip></camera>
+          <camera><horizontal_fov>1.45</horizontal_fov><image><width>1280</width><height>720</height></image><clip><near>0.1</near><far>20</far></clip></camera>
           <always_on>1</always_on><update_rate>25</update_rate>
         </sensor>
       </link>

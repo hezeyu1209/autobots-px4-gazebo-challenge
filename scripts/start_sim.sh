@@ -10,5 +10,6 @@ fi
 cp "$repo/worlds/autobots_roundtrip.sdf" "$world_dir/autobots_roundtrip.sdf"
 cd "$px4_dir"
 export PX4_GZ_WORLD=autobots_roundtrip
+export PX4_GZ_MODEL_POSE="${PX4_GZ_MODEL_POSE:-0,0,0.77}"
 export HEADLESS="${HEADLESS:-1}"
 exec make px4_sitl gz_x500_mono_cam

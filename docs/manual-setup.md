@@ -9,4 +9,4 @@
 5. 把 `px4_msgs` 的 `release/1.16` 分支放到 `workspace/src/px4_msgs`，或者设置 `PX4_ROS_WS` 指向已构建且版本匹配的外部工作区。
 6. 在本仓库根目录运行 `bash scripts/build_workspace.sh` 和 `bash scripts/check_environment.sh`。
 
-Windows 用户在 WSL2 的 Ubuntu 终端中完成这些步骤，不要在 PowerShell 中执行 `.sh`。WSL 图形界面因系统设置而异；无图形界面先用默认 `HEADLESS=1` 验证通信。首次加载 Gazebo Fuel 的树木/草地需要网络，缓存后可离线。
+Windows 用户在 WSL2 的 Ubuntu 终端中完成这些步骤，不要在 PowerShell 中执行 `.sh`。WSL 图形界面因系统设置而异；无图形界面先用默认 `HEADLESS=1` 验证通信。室内场景使用本地几何，首次安装 PX4/ROS 2 依赖时需要网络。
