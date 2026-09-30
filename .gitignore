@@ -1,0 +1,13 @@
+build/
+install/
+log/
+deps/
+workspace/src/px4_msgs/
+results/
+__pycache__/
+*.pyc
+*.ulg
+*.mp4
+*.log
+*.err
+.venv/

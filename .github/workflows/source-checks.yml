@@ -1,0 +1,28 @@
+name: Source checks
+on:
+  push:
+  pull_request:
+jobs:
+  source:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell syntax
+        run: bash -n scripts/*.sh
+      - name: Check Python and SDF syntax
+        run: |
+          python3 -m py_compile scripts/sim_gcs_heartbeat.py workspace/src/autobots_challenge/setup.py
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          ET.parse('worlds/autobots_roundtrip.sdf')
+          ET.parse('workspace/src/autobots_challenge/package.xml')
+          PY
+      - name: Confirm student package has no runnable solution
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          pkg = Path('workspace/src/autobots_challenge/autobots_challenge')
+          assert sorted(p.name for p in pkg.glob('*.py')) == ['__init__.py']
+          setup = Path('workspace/src/autobots_challenge/setup.py').read_text()
+          assert "'console_scripts': []" in setup
+          PY
