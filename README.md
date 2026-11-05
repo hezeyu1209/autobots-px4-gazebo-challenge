@@ -49,6 +49,10 @@ bash scripts/check_ready.sh
 
 看到 `/fmu/out/vehicle_local_position` 等话题且 PX4 位置数据持续更新，表示环境可供开发；**这不代表飞机已完成任何任务**。图形界面可用时设置 `HEADLESS=0 bash scripts/start_sim.sh` 显示 Gazebo；默认 `HEADLESS=1`，便于 WSL/无显示设备使用。
 
+## 统一选拔考核
+
+所有候选人采用同一标准：自行实现 **A 起飞 → 绕墙到 B → 自选 C → 返回 A 桌面降落并解除解锁**。航点和飞行参数从配置文件读取，至少演示两组配置；实现速度限制、基于实际位置的到点判定、单段超时，以及通信或模式异常的一种恢复或安全终止策略。B、C 点不强制降落。完整要求与提交清单见 [选拔考核说明](docs/student-task.md)。
+
 ## 学员从哪里写代码
 
 `workspace/src/autobots_challenge/` 是一个**没有可执行控制节点的空 ROS 2 Python 包**。在 `autobots_challenge/` 下创建自己的 Python 节点，并在 `setup.py` 中注册 `console_scripts`；或自行添加其他 ROS 2 包。修改后运行 `bash scripts/build_workspace.sh`，再 `source workspace/install/setup.bash`。具体任务、交付要求和可用接口见 [学员任务](docs/student-task.md)。
