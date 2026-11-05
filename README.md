@@ -1,10 +1,108 @@
-# AutoBots PX4 × Gazebo 学员起步仓库
+# 无人机科技工作室选拔赛题
 
-这个仓库只负责提供仿真环境：PX4 x500 四旋翼、封闭室内房间、分置在两张桌子上的 A/B 起降圈、中间实体隔墙、ROS 2 工作区空包，以及环境检查和启动脚本。**没有航点控制程序、飞行任务入口、参考轨迹或完成任务的视频。**克隆并启动后，飞机只会停在 A 桌面；起飞、绕墙、导航、返回、降落、异常处理均需学员自己编写。
+**题目：基于 ROS 2 与 PX4 的室内无人机可配置航线任务**
 
-适用环境：Ubuntu 22.04（原生或 WSL2）、ROS 2 Humble、Gazebo Harmonic、PX4 v1.16.2、`px4_msgs` release/1.16、Micro XRCE-DDS Agent v2.4.3。建议至少预留 20 GB 可用空间；Windows 用户请把 WSL 虚拟磁盘放在空间充足的盘符。首次安装依赖需要联网；室内场景由仓库内 SDF 几何构成，不依赖 Gazebo Fuel 下载素材。
+| 项目 | 说明 |
+| --- | --- |
+| 考核形式 | 仿真实践、成果提交与面试答辩 |
+| 适用对象 | 全体参选人员，采用统一考核标准 |
+| 开发平台 | Ubuntu 22.04、ROS 2 Humble、PX4 SITL、Gazebo |
+| 工作量参考 | 3–5 天；提交截止时间与方式由组织者另行通知 |
 
-## 从零安装
+## 一、考核说明
+
+本题考察资料检索、程序开发、系统调试、结果分析与技术表达能力。参选人员须在给定仿真环境中自行编写 ROS 2 控制节点，完成飞行任务，并通过运行记录说明实现过程与结果。
+
+本仓库提供室内场景、PX4 x500 无人机启动脚本、环境检查工具与空 ROS 2 Python 功能包。启动后，无人机位于 A 桌面，等待参选人员的程序控制。
+
+允许查阅官方文档、网络资料和使用 AI 辅助工具。提交时须说明引用来源和辅助工具的使用情况，并能够在面试中解释所提交代码的输入、输出、主要逻辑与参数选择。
+
+所有飞行须通过 PX4 控制。禁止使用 Gazebo `set_pose`、模型移动命令或视频后期合成代替飞行。考核仅在软件在环仿真中进行。
+
+## 二、任务背景与场景条件
+
+仿真场景为封闭房间。A、B 起降圈分别位于两张桌面上，中央实体隔墙阻断 A、B 之间的直线路径，无人机需要从隔墙一侧通道绕行。
+
+以下坐标均为 Gazebo 世界 ENU 坐标，单位为米：
+
+| 场景要素 | 参数 |
+| --- | --- |
+| A 起降圈 | 黄色，水平位置约 `(0, 0)` |
+| B 起降圈 | 蓝色，水平位置约 `(7, 0)` |
+| 桌面高度 | 约 `0.77` |
+| 房间边界 | `x=-2.25..9.25`，`y=-4.2..4.2` |
+| 顶棚底面高度 | 约 `4.2` |
+| 中央隔墙 | 位于 `x=3.5`，横跨 `y=-1.8..1.8`，从地面接至顶棚 |
+| C 目标点 | 由参选人员在房间内自选，与 A、B 为不同位置 |
+
+外墙、顶棚、隔墙和桌面均有碰撞体。顶棚视觉面为方便俯视观察而隐藏，碰撞体仍然存在。路线与飞行高度须考虑机体尺寸，保留合理安全间距。
+
+PX4 使用本地 NED 坐标，原点接近 A 桌面。须核对世界坐标与飞控坐标的关系，不能直接将 Gazebo 世界高度作为 PX4 的 z 值。
+
+## 三、考核任务
+
+### （一）完整航线
+
+**A 桌面解锁起飞 → 绕墙到达 B → 到达自选 C 点 → 返回 A → 在 A 桌面降落并解除解锁。**
+
+1. 所有跨越隔墙的路段均须从隔墙两侧通道之一绕行，不得穿墙、越界或从顶棚上方绕行。
+2. 自行确定 C 点位置，说明坐标、坐标系、安全间距与选择路线的理由。
+3. B、C 为飞行到达点，不强制降落；B 点降落后再起飞可作为扩展。
+4. 允许自行设计绕墙中间航点，不强制要求激光雷达建图、A*、SLAM 或 AprilTag 识别。
+
+### （二）必做功能
+
+| 序号 | 功能 | 具体要求 |
+| --- | --- | --- |
+| 1 | 飞行状态管理 | 实现 Offboard 信号预发送、模式切换、解锁、起飞、巡航、返航、降落及解除解锁；持续发送所需控制信号，读取实际位置与状态反馈。 |
+| 2 | 到点判定 | 基于实际位置反馈判定到点，设置并说明误差阈值与稳定到点条件；不得仅以固定等待时间代替到点判定。 |
+| 3 | 配置化航线 | 从配置文件读取航线、巡航高度、速度限制、到点阈值与单段超时；切换配置时无需修改控制逻辑源码。 |
+| 4 | 速度限制与超时 | 说明速度约束方法；任一航段超时后进入明确的失败处理流程。 |
+| 5 | 异常处理 | 针对通信或飞行模式异常，至少实现一种恢复或安全终止策略；记录触发条件、检测依据、程序动作与 PX4 实际响应。 |
+| 6 | 结果记录 | 保存实际位置、飞行状态及关键阶段切换、到点和异常事件，以便复核结果。 |
+
+### （三）演示要求
+
+1. **两组配置演示**：提交两组不同配置，说明差异，分别完成一次完整航线任务。
+2. **一次异常演示**：演示通信或飞行模式异常的触发及处理，说明预期结果与实际结果。
+3. 每次演示均须保留连续仿真画面及对应的位置、状态和事件记录。
+
+## 四、完成判定与考核要点
+
+完整任务成功须有记录证明：依次完成 A 起飞、B 到达、C 到达、返回 A、A 桌面降落和解除解锁，且未发生碰撞或越界。发生超时、异常中止或未完成任一阶段时，不得将该次运行标记为完整任务成功。
+
+异常演示单独核对预期处理结果；按预期安全终止与完整航线任务成功分别记录。
+
+考核将结合以下方面及面试答辩综合评定：
+
+- 任务完成情况与重复运行的稳定性。
+- 程序结构、配置设计与代码可读性。
+- 坐标系、位置反馈和状态切换的理解。
+- 速度约束、超时判断及异常处理的合理性。
+- 日志证据、问题分析与结果表达。
+
+面试将围绕实际提交内容追问，包括持续发送 Offboard 信号的原因、到点条件、绕墙间距、桌面降落、故障定位方法，以及仿真定位与真实室内定位的区别。
+
+## 五、提交材料
+
+| 序号 | 材料 | 内容要求 |
+| --- | --- | --- |
+| 1 | 源代码与运行说明 | 自编 ROS 2 功能包、依赖说明、完整启动命令，注明姓名与学号。 |
+| 2 | 两组配置文件 | 与两次完整任务演示对应，说明配置之间的差异。 |
+| 3 | 设计说明 | 约 300 字，说明状态流程、坐标系、C 点选择与绕墙路线。 |
+| 4 | 演示视频 | 两组配置各一次完整任务录像，以及一次异常处理演示；标明所用配置。 |
+| 5 | 数据与事件日志 | 与视频对应的实际位置、状态及关键事件记录；仅有视频不算完成。 |
+| 6 | 结果说明 | 成功与失败的判定依据、配置结果比较、至少一次遇到的问题及处理过程、参考来源与辅助工具使用说明。 |
+
+## 六、环境准备与启动
+
+### （一）环境要求
+
+Ubuntu 22.04（原生或 WSL2）、ROS 2 Humble、Gazebo Harmonic、PX4 v1.16.2、`px4_msgs` release/1.16、Micro XRCE-DDS Agent v2.4.3。建议至少预留 20 GB 可用空间；Windows 用户应将 WSL 虚拟磁盘放在空间充足的盘符。
+
+首次安装需要联网和 `sudo` 权限。场景使用仓库内 SDF 几何，不依赖 Gazebo Fuel 下载素材。
+
+### （二）获取与安装
 
 在 Ubuntu 终端执行：
 
@@ -12,65 +110,56 @@
 git clone https://github.com/hezeyu1209/autobots-px4-gazebo-challenge.git
 cd autobots-px4-gazebo-challenge
 bash scripts/bootstrap_ubuntu.sh
-```
-
-脚本会检查系统版本，按需安装 ROS 2、PX4/Gazebo 工具链、Agent 和 `px4_msgs`，并编译空 ROS 2 包。需要 `sudo` 权限；首次运行耗时较长，安装结束后建议重启 Ubuntu/WSL。它不会运行飞行任务。已有环境可设置 `PX4_DIR` 和 `PX4_ROS_WS` 复用现有 PX4 源码和 `px4_msgs` 工作区，然后执行 `bash scripts/build_workspace.sh`。如果不愿运行自动安装脚本，参照 [手动安装](docs/manual-setup.md)。
-
-验证依赖：
-
-```bash
 bash scripts/check_environment.sh
 ```
 
-## 启动环境
+安装脚本按需下载依赖并编译工作区，首次运行耗时较长，安装完成后建议重启 Ubuntu/WSL。已有环境可通过 `PX4_DIR` 和 `PX4_ROS_WS` 复用现有依赖，再执行 `bash scripts/build_workspace.sh`。详细步骤见 [手动安装说明](docs/manual-setup.md)。
 
-在仓库根目录打开三个 Ubuntu 终端，依次运行：
+### （三）启动与检查
+
+在仓库根目录依次打开终端执行：
 
 ```bash
-# 终端 1：把本仓库场景载入 PX4，并生成 x500 无人机
-bash scripts/start_sim.sh
+# 终端 1：显示 Gazebo 房间与 x500 无人机
+HEADLESS=0 bash scripts/start_sim.sh
 ```
 
 ```bash
-# 终端 2：让 PX4 与 ROS 2 通信
+# 终端 2：启动 PX4 与 ROS 2 的通信 Agent
 bash scripts/start_agent.sh
 ```
 
 ```bash
-# 终端 3：仅当没有连接 QGroundControl 时，给 PX4 提供地面站心跳
+# 终端 3：未连接 QGroundControl 时，提供仿真地面站心跳
 python3 scripts/sim_gcs_heartbeat.py
 ```
 
-另开终端检查：
-
 ```bash
+# 另开终端：检查话题与位置反馈
 bash scripts/check_ready.sh
 ```
 
-看到 `/fmu/out/vehicle_local_position` 等话题且 PX4 位置数据持续更新，表示环境可供开发；**这不代表飞机已完成任何任务**。图形界面可用时设置 `HEADLESS=0 bash scripts/start_sim.sh` 显示 Gazebo；默认 `HEADLESS=1`，便于 WSL/无显示设备使用。
+无图形环境可使用默认的 `bash scripts/start_sim.sh`（`HEADLESS=1`）。启动脚本默认将 x500 放在 A 桌面，位姿为 `PX4_GZ_MODEL_POSE=0,0,0.77`。检查到 `/fmu/out/vehicle_local_position` 等话题持续更新后，可开始开发与调试。
 
-## 统一选拔考核
+### （四）编写与编译程序
 
-所有候选人采用同一标准：自行实现 **A 起飞 → 绕墙到 B → 自选 C → 返回 A 桌面降落并解除解锁**。航点和飞行参数从配置文件读取，至少演示两组配置；实现速度限制、基于实际位置的到点判定、单段超时，以及通信或模式异常的一种恢复或安全终止策略。B、C 点不强制降落。完整要求与提交清单见 [选拔考核说明](docs/student-task.md)。
+`workspace/src/autobots_challenge/` 为开发入口。可在包内创建 Python 节点，在 `setup.py` 的 `console_scripts` 中注册入口，或自行添加其他 ROS 2 包。修改后执行：
 
-## 学员从哪里写代码
-
-`workspace/src/autobots_challenge/` 是一个**没有可执行控制节点的空 ROS 2 Python 包**。在 `autobots_challenge/` 下创建自己的 Python 节点，并在 `setup.py` 中注册 `console_scripts`；或自行添加其他 ROS 2 包。修改后运行 `bash scripts/build_workspace.sh`，再 `source workspace/install/setup.bash`。具体任务、交付要求和可用接口见 [学员任务](docs/student-task.md)。
-
-黄色 A 圈位于 Gazebo ENU `(0, 0)` 的桌面上，蓝色 B 圈位于 `(7, 0)` 的另一张桌面上，桌面高度约 `0.77 m`。房间边界约为 `x=-2.25..9.25 m`、`y=-4.2..4.2 m`，顶棚底面约 `z=4.2 m`。隔墙位于 `x=3.5 m`、横跨 `y=-1.8..1.8 m`，从地面接至顶棚；A→B 直线会撞墙，必须从隔墙的一侧绕行。外墙、顶棚、隔墙和桌面都有碰撞体。顶棚的视觉面专为俯视摄像机隐藏，**顶棚碰撞仍然存在**。
-
-启动脚本默认把 x500 放在 A 桌面高度（`PX4_GZ_MODEL_POSE=0,0,0.77`）。PX4 本地 NED 坐标与 Gazebo ENU 不同，而且 PX4 本地原点接近 A 桌面，不能把 Gazebo 世界高度直接当作 PX4 的 z。学员应核对实际位置反馈与安全间距。室内仍使用 PX4 SITL 的模拟定位传感器，这不代表真实室内环境有 GPS 可用；真机室内导航需要另行设计感知、定位与安全系统。
-
-## 仓库内容
-
-```text
-worlds/autobots_roundtrip.sdf       室内房间、实体隔墙、桌面 A/B 圈、摄像机、PX4 传感器系统
-workspace/src/autobots_challenge/   空 ROS 2 Python 包，无控制实现
-scripts/bootstrap_ubuntu.sh         按需准备依赖与编译工作区
-scripts/start_sim.sh                启动 PX4 x500 + Gazebo 场景
-scripts/start_agent.sh              启动 DDS 通信 Agent
-scripts/check_ready.sh              检查 ROS 2 话题和位置反馈
-docs/                                安装、任务与排错说明
+```bash
+bash scripts/build_workspace.sh
+source workspace/install/setup.bash
 ```
 
-故障排查见 [troubleshooting.md](docs/troubleshooting.md)。依赖安装以 [PX4 v1.16 Ubuntu 指南](https://docs.px4.io/v1.16/en/dev_setup/dev_env_linux_ubuntu)、[PX4 ROS 2 指南](https://docs.px4.io/v1.16/en/ros2/user_guide) 为准。本项目仅限软件在环（SITL）；不得直接用于真机。
+随后运行自己注册的控制节点。仓库内的空包没有预置飞行任务入口。
+
+## 七、资料与附件
+
+- [仿真场景](worlds/autobots_roundtrip.sdf)
+- [ROS 2 功能包起始目录](workspace/src/autobots_challenge/)
+- [手动安装说明](docs/manual-setup.md)
+- [故障排查](docs/troubleshooting.md)
+- [PX4 ROS 2 使用指南](https://docs.px4.io/v1.16/en/ros2/user_guide)
+- [PX4 Offboard 控制说明](https://docs.px4.io/v1.16/en/flight_modes/offboard)
+- [ROS 2 Python 功能包教程](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-Your-First-ROS2-Package.html)
+
+本题使用 PX4 仿真定位反馈；真实室内飞行所需的定位与安全系统不属于本题提供的环境。
